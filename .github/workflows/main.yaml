@@ -39,6 +39,9 @@ jobs:
       - name: Restore Dependencies
         run: dotnet restore src/Project1/
 
+      - name: Run Unit Tests  # ✅ NEW - Run tests before building
+        run: dotnet test src/Project1.Tests/ --configuration Release --logger trx || exit 1
+
       - name: Build Application
         run: dotnet build src/Project1/ --configuration Release
 
