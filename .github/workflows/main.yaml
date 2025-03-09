@@ -27,9 +27,11 @@ jobs:
         run: npm install -g aws-cdk
 
       - name: Restore Dependencies
+        working-directory: src/
         run: dotnet restore
 
       - name: Build Application
+        working-directory: src/
         run: dotnet build --configuration Release
 
       - name: Synthesize AWS CDK Stack
