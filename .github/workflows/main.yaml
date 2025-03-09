@@ -3,10 +3,11 @@ name: Deploy AWS CDK .NET App
 on:
   push:
     branches:
-      - main
+      - staging  # ✅ Deploy to staging first
+      - main     # ✅ Deploy to production only if staging is successful
 
 jobs:
-  deploy:
+  test_and_deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -31,7 +32,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1  # ✅ Using your AWS region
+          aws-region: ap-south-1
 
       - name: Get AWS Account ID
         run: echo "AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
@@ -39,7 +40,7 @@ jobs:
       - name: Restore Dependencies
         run: dotnet restore src/Project1/
 
-      - name: Run Unit Tests  # ✅ NEW - Run tests before building
+      - name: Run Unit Tests  # ✅ Ensure staging is working before deploying
         run: dotnet test src/Project1.Tests/ --configuration Release --logger trx || exit 1
 
       - name: Build Application
@@ -53,5 +54,14 @@ jobs:
       - name: Synthesize AWS CDK Stack
         run: cdk synth
 
-      - name: Deploy AWS CDK Stack
+      - name: Deploy to Staging
+        if: github.ref == 'refs/heads/staging'
         run: cdk deploy --require-approval never
+        env:
+          AWS_REGION: ap-south-1
+
+      - name: Deploy to Production (Only if staging is successful)
+        if: github.ref == 'refs/heads/main'
+        run: cdk deploy --require-approval never
+        env:
+          AWS_REGION: ap-south-1
