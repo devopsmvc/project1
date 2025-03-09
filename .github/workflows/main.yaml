@@ -13,10 +13,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Set up .NET
+      - name: Set up .NET 8.0
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0'  # Adjust according to your app
+          dotnet-version: '8.0'
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -27,19 +27,21 @@ jobs:
         run: npm install -g aws-cdk
 
       - name: Restore Dependencies
-        working-directory: src/
-        run: dotnet restore
+        run: dotnet restore src/Project1/
 
       - name: Build Application
-        working-directory: src/
-        run: dotnet build --configuration Release
+        run: dotnet build src/Project1/ --configuration Release
+
+      - name: Bootstrap AWS Environment (if not already bootstrapped)
+        run: cdk bootstrap aws://$AWS_ACCOUNT_ID/$AWS_REGION
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
 
       - name: Synthesize AWS CDK Stack
         run: cdk synth
 
       - name: Deploy AWS CDK Stack
         run: cdk deploy --require-approval never
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ap-south-1  # Change to your preferred AWS region
