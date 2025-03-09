@@ -26,6 +26,16 @@ jobs:
       - name: Install AWS CDK
         run: npm install -g aws-cdk
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1  # ✅ Using your AWS region
+
+      - name: Get AWS Account ID
+        run: echo "AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
+
       - name: Restore Dependencies
         run: dotnet restore src/Project1/
 
@@ -33,12 +43,9 @@ jobs:
         run: dotnet build src/Project1/ --configuration Release
 
       - name: Bootstrap AWS Environment (if not already bootstrapped)
-        run: cdk bootstrap aws://$AWS_ACCOUNT_ID/$AWS_REGION
+        run: cdk bootstrap aws://$AWS_ACCOUNT_ID/ap-south-1
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_REGION: ap-south-1
 
       - name: Synthesize AWS CDK Stack
         run: cdk synth
