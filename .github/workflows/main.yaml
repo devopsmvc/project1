@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - staging  # ✅ Deploy to staging first
-      - main     # ✅ Deploy to production only if staging is successful
+      - main     # ✅ Deploy to production only if staging succeeds
 
 jobs:
-  test_and_deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -55,13 +55,30 @@ jobs:
         run: cdk synth
 
       - name: Deploy to Staging
+        id: deploy_staging
         if: github.ref == 'refs/heads/staging'
         run: cdk deploy --require-approval never
         env:
           AWS_REGION: ap-south-1
 
+      - name: Rollback Staging on Failure
+        if: failure() && github.ref == 'refs/heads/staging'
+        run: cdk destroy -f
+        env:
+          AWS_REGION: ap-south-1
+
       - name: Deploy to Production (Only if staging is successful)
+        id: deploy_production
         if: github.ref == 'refs/heads/main'
         run: cdk deploy --require-approval never
+        env:
+          AWS_REGION: ap-south-1
+
+      - name: Rollback Production on Failure
+        if: failure() && github.ref == 'refs/heads/main'
+        run: |
+          echo "⚠️ Deployment failed! Rolling back to previous stable version..."
+          git revert HEAD --no-edit
+          git push origin main
         env:
           AWS_REGION: ap-south-1
