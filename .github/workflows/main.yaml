@@ -1,0 +1,43 @@
+name: Deploy AWS CDK .NET App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '7.0'  # Adjust according to your app
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install AWS CDK
+        run: npm install -g aws-cdk
+
+      - name: Restore Dependencies
+        run: dotnet restore
+
+      - name: Build Application
+        run: dotnet build --configuration Release
+
+      - name: Synthesize AWS CDK Stack
+        run: cdk synth
+
+      - name: Deploy AWS CDK Stack
+        run: cdk deploy --require-approval never
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1  # Change to your preferred AWS region
